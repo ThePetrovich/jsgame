@@ -4,29 +4,41 @@ var mainContext = mainCanvas.getContext('2d');
 const playAreaWidth = 900;
 const playAreaHeight = 900;
 
-var pKeys = [false, false, false, false];
+var pKeys = [false, false, false, false, false, false, false, false];
 
 window.addEventListener("keydown", function (event) {
-    if (event.defaultPrevented) {
-      return;
-    }
-  
-    switch (event.key) {
-      case "ArrowDown":
-        pKeys[0] = true;
-        break;
-      case "ArrowUp":
-        pKeys[1] = true;
-        break;
-      case "ArrowLeft":
-        pKeys[2] = true;
-        break;
-      case "ArrowRight":
-        pKeys[3] = true;
-        break;
-      default:
+        if (event.defaultPrevented) {
         return;
-    }
+        }
+    
+        switch (event.key) {
+        case "ArrowDown":
+            pKeys[0] = true;
+            break;
+        case "ArrowUp":
+            pKeys[1] = true;
+            break;
+        case "ArrowLeft":
+            pKeys[2] = true;
+            break;
+        case "ArrowRight":
+            pKeys[3] = true;
+            break;
+        case "s":
+            pKeys[4] = true;
+            break;
+        case "w":
+            pKeys[5] = true;
+            break;
+        case "a":
+            pKeys[6] = true;
+            break;
+        case "d":
+            pKeys[7] = true;
+            break;
+        default:
+            return;
+        }
     event.preventDefault();
   }, true);
 
@@ -36,19 +48,31 @@ window.addEventListener("keyup", function (event) {
     }
   
     switch (event.key) {
-      case "ArrowDown":
+    case "ArrowDown":
         pKeys[0] = false;
         break;
-      case "ArrowUp":
+    case "ArrowUp":
         pKeys[1] = false;
         break;
-      case "ArrowLeft":
+    case "ArrowLeft":
         pKeys[2] = false;
         break;
-      case "ArrowRight":
+    case "ArrowRight":
         pKeys[3] = false;
         break;
-      default:
+    case "s":
+        pKeys[4] = false;
+        break;
+    case "w":
+        pKeys[5] = false;
+        break;
+    case "a":
+        pKeys[6] = false;
+        break;
+    case "d":
+        pKeys[7] = false;
+        break;
+    default:
         return;
     }
     event.preventDefault();
