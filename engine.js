@@ -1,6 +1,8 @@
 var mainCanvas = document.getElementById('cnv');
 var mainContext = mainCanvas.getContext('2d');
 
+mainContext.font = '32px Arial';
+
 const playAreaWidth = 900;
 const playAreaHeight = 900;
 
@@ -92,18 +94,13 @@ class engine_gameSprite {
     }
 
     draw(renderContext) {
-        //if (this.needToRedraw) {
-            renderContext.save();
+        renderContext.save();
 
-            renderContext.translate(this.image.width/2 + this.offsetX,this.image.height/2 + this.offsetY);
+        renderContext.translate(this.image.width/2 + this.offsetX,this.image.height/2 + this.offsetY);
+        renderContext.rotate(this.rotation*Math.PI/180);
+        renderContext.drawImage(this.image, -this.image.width/2, -this.image.height/2);
 
-            renderContext.rotate(this.rotation*Math.PI/180);
-
-            renderContext.drawImage(this.image, -this.image.width/2, -this.image.height/2);
-
-           // this.needToRedraw = 0;
-           renderContext.restore();
-       // }
+        renderContext.restore();
     }
 }
 
@@ -115,13 +112,16 @@ class engine_gameObject {
         this.posX = 0;
         this.posY = 0;
 
+        this.width = width;
+        this.height = height;
+
         this.renderCanvas.width = width;
         this.renderCanvas.height = height;
         this.renderContext = this.renderCanvas.getContext('2d');
 
         this.doUpdate = null;
 
-        gs.regObject(this);
+        this.removePos = gs.regObject(this);
     }
 
     addSprite(sprite) {
@@ -129,25 +129,65 @@ class engine_gameObject {
     }
 
     render() {
-        this.renderContext.clearRect(0,0,this.renderCanvas.width,this.renderCanvas.height);
+        this.renderContext.clearRect(0,0,this.width,this.height);
         if (this.doUpdate) this.doUpdate();
         for (let i = 0; i < this.sprites.length; i++) {
             this.sprites[i].draw(this.renderContext);
         }
 
-        mainContext.drawImage(this.renderCanvas, this.posX - this.renderCanvas.width/2, this.posY - this.renderCanvas.height/2);
+        mainContext.drawImage(this.renderCanvas, this.posX - this.width/2, this.posY - this.height/2);
+    }
+}
+
+class engine_UIObject {
+    constructor(gs, posX, posY) {
+        this.sprites = [];
+        
+        this.posX = posX;
+        this.posY = posY;
+
+        this.doUpdate = null;
+
+        gs.regObjectUI(this);
+    }
+
+    addSprite(sprite) {
+        this.sprites.push(sprite);
+    }
+
+    render() {
+        if (this.doUpdate) this.doUpdate();
+
+        for (let i = 0; i < this.sprites.length; i++) {
+            this.sprites[i].draw(mainContext);
+        }
     }
 }
 
 class engine_gameState {
     constructor() {
         this.objects = [];
+        this.uiobjects = [];
         this.tickInterval = null;
         mainContext.rect(0,0,playAreaWidth,playAreaHeight);
     }
 
     regObject(object) {
         this.objects.push(object);
+        return this.objects.length - 1;
+    }
+
+    regObjectUI(object) {
+        this.uiobjects.push(object);
+        return this.uiobjects.length - 1;
+    }
+
+    untrackObject(pos) {
+        this.objects.splice(pos, 1); 
+    }
+
+    untrackObjectUI(pos) {
+        this.uiobjects.splice(pos, 1); 
     }
 
     run() {
@@ -155,6 +195,11 @@ class engine_gameState {
         for (let i = 0; i < this.objects.length; i++) {
             this.objects[i].render();
         }
+
+        for (let i = 0; i < this.uiobjects.length; i++) {
+            this.uiobjects[i].render();
+        }
         this.tickInterval = setTimeout(this.run.bind(this), 10);
     }
 }
+
