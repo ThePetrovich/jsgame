@@ -122,6 +122,8 @@ class engine_gameObject {
         this.doUpdate = null;
 
         this.removePos = gs.regObject(this);
+
+        this.gone = false;
     }
 
     addSprite(sprite) {
@@ -169,7 +171,8 @@ class engine_gameState {
         this.objects = [];
         this.uiobjects = [];
         this.tickInterval = null;
-        mainContext.rect(0,0,playAreaWidth,playAreaHeight);
+        this.background = new Image(playAreaWidth, playAreaWidth);
+        this.background.src = "background.png";
     }
 
     regObject(object) {
@@ -191,9 +194,18 @@ class engine_gameState {
     }
 
     run() {
-        mainContext.fill();
+        mainContext.drawImage(this.background, 0, 0);
         for (let i = 0; i < this.objects.length; i++) {
-            this.objects[i].render();
+            if (!this.objects[i].gone) {
+                this.objects[i].render();
+            }
+            else {
+                //console.log("destroying object: ");
+                //console.log(this.objects[i]);
+                delete this.objects[i];
+                this.untrackObject(i);
+            }
+            
         }
 
         for (let i = 0; i < this.uiobjects.length; i++) {

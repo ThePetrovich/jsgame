@@ -1,13 +1,21 @@
 var gameState = new engine_gameState();
 
 let bulletSprite = new engine_gameSprite("bullet.png", 20, 20, 0, 0);
+let engineSprite = new engine_gameSprite("fire.png", 20, 20, 0, 0);
+let engineSprite1 = new engine_gameSprite("fire2.png", 10, 10, 0, 0);
+
+function randN(min, max) {  
+    return Math.floor(Math.random() * (max - min) + min); 
+}
 
 class bullet extends engine_gameObject {
-    constructor(posX, posY, speedX, speedY) {
+    constructor(posX, posY, speedX, speedY, owner) {
         super(20, 20, gameState);
 
         console.log("bullet created");
         this.doUpdate = this.update;
+
+        this.owner = owner;
 
         this.posX = posX;
         this.posY = posY;
@@ -17,6 +25,9 @@ class bullet extends engine_gameObject {
 
         this.distanceToCenter = 0
         this.angleToCenter = 0;
+
+        this.timeToLive = 500;
+        this.gone = false;
     }
 
     checkCollision(target) {
@@ -36,42 +47,142 @@ class bullet extends engine_gameObject {
         this.distanceToCenter = Math.sqrt((this.posX - playAreaWidth/2)**2 + (this.posY - playAreaHeight/2)**2);
         this.angleToCenter = Math.atan2((playAreaWidth/2 - this.posY), (playAreaHeight/2 - this.posX));
 
-        this.speedX += 1/this.distanceToCenter * 3 * Math.cos(this.angleToCenter);
-        this.speedY += 1/this.distanceToCenter * 3 * Math.sin(this.angleToCenter);
+        this.speedX += 1/this.distanceToCenter * 2 * Math.cos(this.angleToCenter);
+        this.speedY += 1/this.distanceToCenter * 2 * Math.sin(this.angleToCenter);
+
+        if (!this.timeToLive) {
+            this.gone = true;
+        }
+        else {
+            this.timeToLive--;
+        }
+
+        if (!this.gone) {
+            let deathFromStar = this.checkCollision(star);
+            let deathFromP1 = this.checkCollision(spaceShipOne);
+            let deathFromP2 = this.checkCollision(spaceShipTwo);
+
+            if ((deathFromStar || deathFromP1 || deathFromP2) && this.timeToLive < 480) {
+                this.gone = true;
+                if (deathFromP1) {
+                    spaceShipTwo.score++;
+                    spaceShipOne.respawn();
+                }
+                else if (deathFromP2) {
+                    spaceShipOne.score++;
+                    spaceShipTwo.respawn();
+                }
+                console.log('bullet hit something');
+            }
+            if (this.timeToLive % 3 == 0) {
+                let fireeff = new particle(this.posX + 1, this.posY + 1, 0, 0, 10 + randN(1,8));
+                fireeff.addSprite(engineSprite1);
+            }
+        }
+    }
+}
+
+class particle extends engine_gameObject {
+    constructor(posX, posY, speedX, speedY, ttl) {
+        super(20, 20, gameState);
+        this.doUpdate = this.update;
+
+        this.posX = posX;
+        this.posY = posY;
+
+        this.speedX = speedX;
+        this.speedY = speedY;
+
+        this.timeToLive = ttl;
+        this.gone = false;
+    }
+
+    update() {
+        this.posX += this.speedX;
+        this.posY += this.speedY;
+
+        if (!this.timeToLive) {
+            this.gone = true;
+        }
+        else {
+            this.timeToLive--;
+        }
     }
 }
 
 class spaceship extends engine_gameObject {
-    constructor(width, height, gs, _keyset) {
+    constructor(width, height, gs, _keyset, posX, posY, speedX, speedY) {
         super(width, height, gs);
         this.doUpdate = this.update;
 
-        this.speedX = 0;
-        this.speedY = 0;
+        this.posXstart = posX;
+        this.posYstart = posY;
+        this.speedXstart = speedX;
+        this.speedYstart = speedY;
+
+        this.speedX = this.speedXstart;
+        this.speedY = this.speedYstart;
+        this.posX = this.posXstart;
+        this.posY = this.posYstart;
 
         this.distanceToCenter = 0
         this.angleToCenter = 0;
 
         this.keyset = _keyset;
 
-        this.bullets = [];
-        this.enemy = null;
-
         this.cooldown = 0;
+        this.fireCooldown = 0;
 
         this.score = 0;
     }
 
+    checkCollision(target) {
+        if (target.posX + target.width/3 >= this.posX &&    // r1 right edge past r2 left
+            target.posX <= this.posX + this.width/3 &&    // r1 left edge past r2 right
+            target.posY + target.height/3 >= this.posY &&    // r1 top edge past r2 bottom
+            target.posY <= this.posY + this.height/3) {    // r1 bottom edge past r2 top
+              return true;
+        }
+        else return false;
+    }
+
+    respawn() {
+        for (let i = 0; i < 20; i++) {
+            let fireeff = new particle(this.posX, this.posY, randN(-5,4), randN(-5,4), randN(4,20));
+            fireeff.addSprite(engineSprite);
+
+            let fireeff1 = new particle(this.posX, this.posY, randN(-5,4), randN(-5,4), randN(4,20));
+            fireeff1.addSprite(bulletSprite);
+        }
+        this.speedX = this.speedXstart;
+        this.speedY = this.speedYstart;
+        this.posX = this.posXstart;
+        this.posY = this.posYstart;
+    }
+
     shoot() {
-        let bullet1 = new bullet(this.posX + 5, this.posY + 5, this.speedX + -7 * Math.cos((90 + this.sprites[0].rotation)*Math.PI/180), this.speedY + -7 * Math.sin((90 + this.sprites[0].rotation)*Math.PI/180));
+        let bullet1 = new bullet(this.posX + 5, this.posY + 5, this.speedX + -3 * Math.cos((90 + this.sprites[0].rotation)*Math.PI/180), this.speedY + -3 * Math.sin((90 + this.sprites[0].rotation)*Math.PI/180));
         bullet1.addSprite(bulletSprite);
-        this.bullets.push(bullet1);
+    }
+
+    fireEngine() {
+        let fireeff = new particle(this.posX + 7 + 15 * Math.cos((90 + this.sprites[0].rotation)*Math.PI/180), this.posY + 7 + 15 * Math.sin((90 + this.sprites[0].rotation)*Math.PI/180), this.speedX + 2 * Math.cos((randN(80,100) + this.sprites[0].rotation)*Math.PI/180), this.speedY + 2 * Math.sin((randN(80,100) + this.sprites[0].rotation)*Math.PI/180), 10 + randN(1,8));
+        if (randN(1,10) < 7) {
+            fireeff.addSprite(engineSprite)
+        }
+        else {
+            fireeff.addSprite(bulletSprite)
+        }
     }
 
     update() {
         if (pKeys[this.keyset[1]]) {
-            this.speedX -= 0.02 * Math.cos((90 + this.sprites[0].rotation)*Math.PI/180);
-            this.speedY -= 0.02 * Math.sin((90 + this.sprites[0].rotation)*Math.PI/180);
+            if (!this.fireCooldown) {
+                this.fireEngine();
+                this.fireCooldown = 4;
+            }
+            this.speedX -= 0.005 * Math.cos((90 + this.sprites[0].rotation)*Math.PI/180);
+            this.speedY -= 0.005 * Math.sin((90 + this.sprites[0].rotation)*Math.PI/180);
         }
         if (pKeys[this.keyset[0]]) {
             if (!this.cooldown) {
@@ -88,32 +199,16 @@ class spaceship extends engine_gameObject {
         this.distanceToCenter = Math.sqrt((this.posX - playAreaWidth/2)**2 + (this.posY - playAreaHeight/2)**2);
         this.angleToCenter = Math.atan2((playAreaWidth/2 - this.posY), (playAreaHeight/2 - this.posX));
 
-        this.speedX += 1/this.distanceToCenter * 3 * Math.cos(this.angleToCenter);
-        this.speedY += 1/this.distanceToCenter * 3 * Math.sin(this.angleToCenter);
+        this.speedX += 1/this.distanceToCenter * 1 * Math.cos(this.angleToCenter);
+        this.speedY += 1/this.distanceToCenter * 1 * Math.sin(this.angleToCenter);
 
-        for (let i = 0; i < this.bullets.length; i++) {
-            let bulletVibeCheck = false;
-            if (this.bullets[i].checkCollision(this.enemy)) {
-                console.log("bruh! someone hit something damn");
-
-                bulletVibeCheck = true;
-
-                this.score++;
-            }
-
-           // if (!bulletVibeCheck && (this.bullets[i].posX > playAreaWidth|| this.bullets[i].posX < 0 || this.bullets[i].posY > playAreaHeight || this.bullets[i].posY < 0)) {
-           //     console.log("bruh! bullet out of bounds");
-
-            //    bulletVibeCheck = true;
-            //}
-
-            if (bulletVibeCheck) {
-                gameState.untrackObject(this.bullets[i].removePos);
-                delete this.bullets[i];
-                this.bullets.splice(i, 1);
-            }
+        if (this.checkCollision(star)) {
+            this.respawn();
+            console.log('a ship has crashed into the star in lego city!');
         }
+
         if (this.cooldown) this.cooldown--;
+        if (this.fireCooldown) this.fireCooldown--;
     }
 }
 
@@ -133,27 +228,24 @@ class scoreCounter extends engine_UIObject {
     }
 }
 
-let spaceShipOne = new spaceship(70, 70, gameState, [0, 1, 2, 3]);
-let spaceShipTwo = new spaceship(70, 70, gameState, [4, 5, 6, 7]);
+var spaceShipOne = new spaceship(70, 70, gameState, [0, 1, 2, 3], playAreaWidth/2, 200, 1, 0);
+var spaceShipTwo = new spaceship(70, 70, gameState, [4, 5, 6, 7], playAreaWidth/2, playAreaHeight - 200, -1, 0);
 
-let score1 = new scoreCounter(gameState, 50, 50, spaceShipOne, 'Player 1 score: ');
-let score2 = new scoreCounter(gameState, playAreaWidth/2, 50, spaceShipTwo, 'Player 2 score: ');
+var star = new engine_gameObject(500,500, gameState);
 
-spaceShipOne.enemy = spaceShipTwo;
-spaceShipTwo.enemy = spaceShipOne;
+star.posX = playAreaWidth/2 - 50;
+star.posY = playAreaHeight/2 - 100;
 
-spaceShipOne.posX = playAreaWidth/2;
-spaceShipOne.posY = 200;
-spaceShipOne.speedX = 2;
+var score1 = new scoreCounter(gameState, 50, 50, spaceShipOne, 'Player 1 score: ');
+var score2 = new scoreCounter(gameState, playAreaWidth/2, 50, spaceShipTwo, 'Player 2 score: ');
 
-spaceShipTwo.posX = playAreaWidth/2;
-spaceShipTwo.posY = playAreaHeight - 200;
-spaceShipTwo.speedX = -2;
+var rocketSprite1 = new engine_gameSprite("rocket.png", 30, 30, 20, 20);
+var rocketSprite2 = new engine_gameSprite("rocket_green.png", 30, 30, 20, 20);
 
-let rocketSprite1 = new engine_gameSprite("rocket.png", 30, 30, 20, 20);
-let rocketSprite2 = new engine_gameSprite("rocket_green.png", 30, 30, 20, 20);
+var starSprite = new engine_gameSprite("there-was-an-attempt.png", 300, 300, 135, 165);
 
 spaceShipOne.addSprite(rocketSprite1);
 spaceShipTwo.addSprite(rocketSprite2);
+star.addSprite(starSprite);
 
 gameState.run();
