@@ -18,7 +18,7 @@ class engine_gameSprite {
 }
 
 class engine_gameObject {
-    constructor(width, height) {
+    constructor(width, height, gs) {
         this.renderCanvas = document.createElement('canvas');
         this.sprites = [];
         
@@ -30,31 +30,38 @@ class engine_gameObject {
         this.renderContext = this.renderCanvas.getContext('2d');
 
         this.doUpdate = null;
+
+        gs.regObject(this);
     }
 
     addSprite(sprite) {
         this.sprites.push(sprite);
     }
 
-    update() {
-        if (this.doUpdate) {
-            this.doUpdate();
-        }
-        setTimeout(this.update.bind(this), 30);
-
-        this.posX += 2;
-    }
-
     render() {
+        if (this.doUpdate) this.doUpdate();
         for (let i = 0; i < this.sprites.length; i++) {
             this.sprites[i].draw(this.renderContext);
         }
 
         mainContext.drawImage(this.renderCanvas, this.posX, this.posY);
-        setTimeout(this.render.bind(this), 10);
     }
 }
 
-//class engine_gameState {
-//
-//}
+class engine_gameState {
+    constructor() {
+        this.objects = [];
+        this.tickInterval = null;
+    }
+
+    regObject(object) {
+        this.objects.push(object);
+    }
+
+    run() {
+        for (let i = 0; i < this.objects.length; i++) {
+            this.objects[i].render();
+        }
+        this.tickInterval = setTimeout(this.run.bind(this), 10);
+    }
+}
