@@ -4,6 +4,10 @@ let bulletSprite = new engine_gameSprite("bullet.png", 20, 20, 0, 0);
 let engineSprite = new engine_gameSprite("fire.png", 20, 20, 0, 0);
 let engineSprite1 = new engine_gameSprite("fire2.png", 10, 10, 0, 0);
 
+let deathSound = new Audio("bruh.mp3");
+let shootSound = new Audio("laser.mp3");
+let explodeSound = new Audio("baba-booey.mp3");
+
 function randN(min, max) {  
     return Math.floor(Math.random() * (max - min) + min); 
 }
@@ -39,6 +43,20 @@ class bullet extends engine_gameObject {
         }
         else return false;
     }
+    
+    explode() {
+        if (this.posX <= playAreaWidth && this.posX >= 0 && this.posY <= playAreaHeight && this.posY >= 0) {
+            explodeSound.play();
+        }
+        
+        for (let i = 0; i < 5; i++) {
+            let fireeff = new particle(this.posX, this.posY, randN(-5,4), randN(-5,4), randN(1,5));
+            fireeff.addSprite(engineSprite);
+
+            let fireeff1 = new particle(this.posX, this.posY, randN(-5,4), randN(-5,4), randN(1,5));
+            fireeff1.addSprite(bulletSprite);
+        }
+    }
 
     update() {
         this.posX += this.speedX;
@@ -52,6 +70,7 @@ class bullet extends engine_gameObject {
 
         if (!this.timeToLive) {
             this.gone = true;
+            this.explode();
         }
         else {
             this.timeToLive--;
@@ -64,6 +83,8 @@ class bullet extends engine_gameObject {
 
             if ((deathFromStar || deathFromP1 || deathFromP2) && this.timeToLive < 480) {
                 this.gone = true;
+                this.explode();
+
                 if (deathFromP1) {
                     spaceShipTwo.score++;
                     spaceShipOne.respawn();
@@ -147,6 +168,7 @@ class spaceship extends engine_gameObject {
     }
 
     respawn() {
+        deathSound.play();
         for (let i = 0; i < 20; i++) {
             let fireeff = new particle(this.posX, this.posY, randN(-5,4), randN(-5,4), randN(4,20));
             fireeff.addSprite(engineSprite);
@@ -161,6 +183,7 @@ class spaceship extends engine_gameObject {
     }
 
     shoot() {
+        shootSound.play();
         let bullet1 = new bullet(this.posX + 5, this.posY + 5, this.speedX + -3 * Math.cos((90 + this.sprites[0].rotation)*Math.PI/180), this.speedY + -3 * Math.sin((90 + this.sprites[0].rotation)*Math.PI/180));
         bullet1.addSprite(bulletSprite);
     }
@@ -205,6 +228,10 @@ class spaceship extends engine_gameObject {
         if (this.checkCollision(star)) {
             this.respawn();
             console.log('a ship has crashed into the star in lego city!');
+        }
+
+        if (this.posX > playAreaWidth + 100 || this.posX < -100 || this.posY > playAreaHeight + 100 || this.posY < -100) {
+            this.respawn();
         }
 
         if (this.cooldown) this.cooldown--;
