@@ -48,7 +48,7 @@ class bullet extends engine_gameObject {
         if (this.posX <= playAreaWidth && this.posX >= 0 && this.posY <= playAreaHeight && this.posY >= 0) {
             explodeSound.play();
         }
-        
+
         for (let i = 0; i < 5; i++) {
             let fireeff = new particle(this.posX, this.posY, randN(-5,4), randN(-5,4), randN(1,5));
             fireeff.addSprite(engineSprite);
@@ -257,22 +257,43 @@ class scoreCounter extends engine_UIObject {
 
 var spaceShipOne = new spaceship(70, 70, gameState, [0, 1, 2, 3], playAreaWidth/2, 200, 1, 0);
 var spaceShipTwo = new spaceship(70, 70, gameState, [4, 5, 6, 7], playAreaWidth/2, playAreaHeight - 200, -1, 0);
+var rocketSprite1 = new engine_gameSprite("rocket.png", 30, 30, 20, 20);
+var rocketSprite2 = new engine_gameSprite("rocket_green.png", 30, 30, 20, 20);
+spaceShipOne.addSprite(rocketSprite1);
+spaceShipTwo.addSprite(rocketSprite2);
 
 var star = new engine_gameObject(500,500, gameState);
-
+var starSprite = new engine_gameSprite("there-was-an-attempt.png", 300, 300, 135, 165);
+star.addSprite(starSprite);
 star.posX = playAreaWidth/2 - 50;
 star.posY = playAreaHeight/2 - 100;
 
 var score1 = new scoreCounter(gameState, 50, 50, spaceShipOne, 'Player 1 score: ');
 var score2 = new scoreCounter(gameState, playAreaWidth/2, 50, spaceShipTwo, 'Player 2 score: ');
 
-var rocketSprite1 = new engine_gameSprite("rocket.png", 30, 30, 20, 20);
-var rocketSprite2 = new engine_gameSprite("rocket_green.png", 30, 30, 20, 20);
+var legendaryObj = new engine_gameObject(500,500, gameState); 
 
-var starSprite = new engine_gameSprite("there-was-an-attempt.png", 300, 300, 135, 165);
+legendaryObj.posX = playAreaWidth/2 - 50;
+legendaryObj.posY = playAreaHeight/2 - 100;
 
-spaceShipOne.addSprite(rocketSprite1);
-spaceShipTwo.addSprite(rocketSprite2);
-star.addSprite(starSprite);
+var legendarySprite = new engine_gameSprite("legend.png", 453, 453, 0, 0);
+var ghSprite = new engine_gameSprite("gh.png", 100, 100, 0, 0);
+legendaryObj.addSprite(legendarySprite);
+
+gameState.untrackObject(legendaryObj.removePos);
+
+let idkfaTick = 0;
+
+function easterEgg() {
+    gameState.regObject(legendaryObj);
+    if (idkfaTick % 20 == 0) {
+        for (let i = 0; i < 360; i += 10) {
+            let bullet1 = new bullet(300, 250, 5 * Math.cos((i)*Math.PI/180), 5 * Math.sin((i)*Math.PI/180));
+            bullet1.addSprite(ghSprite);
+        }   
+    }
+
+    idkfaTick++;
+}
 
 gameState.run();

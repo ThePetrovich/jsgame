@@ -8,38 +8,54 @@ const playAreaHeight = 900;
 
 var pKeys = [false, false, false, false, false, false, false, false];
 
+var idkfa = [false, false, false, false, false];
+
 window.addEventListener("keydown", function (event) {
         if (event.defaultPrevented) {
-        return;
+            return;
         }
     
         switch (event.key) {
-        case "ArrowDown":
-            pKeys[0] = true;
-            break;
-        case "ArrowUp":
-            pKeys[1] = true;
-            break;
-        case "ArrowLeft":
-            pKeys[2] = true;
-            break;
-        case "ArrowRight":
-            pKeys[3] = true;
-            break;
-        case "s":
-            pKeys[4] = true;
-            break;
-        case "w":
-            pKeys[5] = true;
-            break;
-        case "a":
-            pKeys[6] = true;
-            break;
-        case "d":
-            pKeys[7] = true;
-            break;
-        default:
-            return;
+            case "ArrowDown":
+                pKeys[0] = true;
+                break;
+            case "ArrowUp":
+                pKeys[1] = true;
+                break;
+            case "ArrowLeft":
+                pKeys[2] = true;
+                break;
+            case "ArrowRight":
+                pKeys[3] = true;
+                break;
+            case "s":
+                pKeys[4] = true;
+                break;
+            case "w":
+                pKeys[5] = true;
+                break;
+            case "a":
+                pKeys[6] = true;
+                idkfa[4] = true;
+                break;
+            case "d":
+                pKeys[7] = true;
+                idkfa[1] = true;
+                break;
+            case "k":
+                pKeys[7] = true;
+                idkfa[2] = true;
+                break;
+            case "f":
+                pKeys[7] = true;
+                idkfa[3] = true;
+                break;
+            case "i":
+                pKeys[7] = true;
+                idkfa[0] = true;
+                break;
+            default:
+                return;
         }
     event.preventDefault();
   }, true);
@@ -50,32 +66,46 @@ window.addEventListener("keyup", function (event) {
     }
   
     switch (event.key) {
-    case "ArrowDown":
-        pKeys[0] = false;
-        break;
-    case "ArrowUp":
-        pKeys[1] = false;
-        break;
-    case "ArrowLeft":
-        pKeys[2] = false;
-        break;
-    case "ArrowRight":
-        pKeys[3] = false;
-        break;
-    case "s":
-        pKeys[4] = false;
-        break;
-    case "w":
-        pKeys[5] = false;
-        break;
-    case "a":
-        pKeys[6] = false;
-        break;
-    case "d":
-        pKeys[7] = false;
-        break;
-    default:
-        return;
+        case "ArrowDown":
+                pKeys[0] = false;
+                break;
+            case "ArrowUp":
+                pKeys[1] = false;
+                break;
+            case "ArrowLeft":
+                pKeys[2] = false;
+                break;
+            case "ArrowRight":
+                pKeys[3] = false;
+                break;
+            case "s":
+                pKeys[4] = false;
+                break;
+            case "w":
+                pKeys[5] = false;
+                break;
+            case "a":
+                pKeys[6] = false;
+                idkfa[4] = false;
+                break;
+            case "d":
+                pKeys[7] = false;
+                idkfa[1] = false;
+                break;
+            case "k":
+                pKeys[7] = false;
+                idkfa[2] = false;
+                break;
+            case "f":
+                pKeys[7] = false;
+                idkfa[3] = false;
+                break;
+            case "i":
+                pKeys[7] = false;
+                idkfa[0] = false;
+                break;
+            default:
+                return;
     }
     event.preventDefault();
   }, true);
@@ -194,6 +224,7 @@ class engine_gameState {
     }
 
     run() {
+        let idkfaCorrect = 0;
         mainContext.drawImage(this.background, 0, 0);
         for (let i = 0; i < this.objects.length; i++) {
             if (!this.objects[i].gone) {
@@ -211,6 +242,13 @@ class engine_gameState {
         for (let i = 0; i < this.uiobjects.length; i++) {
             this.uiobjects[i].render();
         }
+
+        for (let i = 0; i < 5; i++) {
+            if (!idkfa[i]) break;
+            else idkfaCorrect++;
+        }
+
+        if (idkfaCorrect == 5) easterEgg();
         this.tickInterval = setTimeout(this.run.bind(this), 10);
     }
 }
