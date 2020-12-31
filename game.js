@@ -1,8 +1,14 @@
 var gameState = new engine_gameState();
 
-let bulletSprite = new engine_gameSprite("bullet.png", 20, 20, 0, 0);
-let engineSprite = new engine_gameSprite("fire.png", 20, 20, 0, 0);
-let engineSprite1 = new engine_gameSprite("fire2.png", 10, 10, 0, 0);
+var rocketSprite1 = new engine_gameSprite("rocket.png", 30, 30, 20, 20);
+var rocketSprite2 = new engine_gameSprite("rocket_green.png", 30, 30, 20, 20);
+var starSprite = new engine_gameSprite("there-was-an-attempt.png", 300, 300, 135, 165);
+var legendarySprite = new engine_gameSprite("legend.png", 453, 453, 0, 0);
+var ghSprite = new engine_gameSprite("gh.png", 100, 100, 0, 0);
+var bulletSprite = new engine_gameSprite("bullet.png", 20, 20, 0, 0);
+var engineSprite = new engine_gameSprite("fire.png", 20, 20, 0, 0);
+var engineSprite1 = new engine_gameSprite("fire2.png", 10, 10, 0, 0);
+var trailSprite = new engine_gameSprite("shiptrail.png", 20, 20, 0, 0);
 
 let deathSound = new Audio("bruh.mp3");
 let shootSound = new Audio("laser.mp3");
@@ -10,6 +16,36 @@ let explodeSound = new Audio("baba-booey.mp3");
 
 function randN(min, max) {  
     return Math.floor(Math.random() * (max - min) + min); 
+}
+
+function util_bigExplosion(x, y) {
+    for (let i = 0; i < 20; i++) {
+        let fireeff = new particle(x, y, randN(-5,4), randN(-5,4), randN(4,20));
+        fireeff.addSprite(engineSprite);
+
+        let fireeff1 = new particle(x, y, randN(-5,4), randN(-5,4), randN(4,20));
+        fireeff1.addSprite(bulletSprite);
+    }
+}
+
+function util_smallExplosion(x, y) {
+    for (let i = 0; i < 5; i++) {
+        let fireeff = new particle(x, y, randN(-5,4), randN(-5,4), randN(1,5));
+        fireeff.addSprite(engineSprite);
+
+        let fireeff1 = new particle(x, y, randN(-5,4), randN(-5,4), randN(1,5));
+        fireeff1.addSprite(bulletSprite);
+    }
+}
+
+function util_checkCollision(obj1, obj2) {
+    if (obj1.posX + obj1.width/3 >= obj2.posX &&    // r1 right edge past r2 left
+        obj1.posX <= obj2.posX + obj2.width/3 &&    // r1 left edge past r2 right
+        obj1.posY + obj1.height/3 >= obj2.posY &&    // r1 top edge past r2 bottom
+        obj1.posY <= obj2.posY + obj2.height/3) {    // r1 bottom edge past r2 top
+          return true;
+    }
+    else return false;
 }
 
 class bullet extends engine_gameObject {
@@ -32,29 +68,14 @@ class bullet extends engine_gameObject {
 
         this.timeToLive = 500;
         this.gone = false;
-    }
 
-    checkCollision(target) {
-        if (target.posX + target.width/3 >= this.posX &&    // r1 right edge past r2 left
-            target.posX <= this.posX + this.width/3 &&    // r1 left edge past r2 right
-            target.posY + target.height/3 >= this.posY &&    // r1 top edge past r2 bottom
-            target.posY <= this.posY + this.height/3) {    // r1 bottom edge past r2 top
-              return true;
-        }
-        else return false;
+        this.trailCooldown = 0;
     }
     
     explode() {
         if (this.posX <= playAreaWidth && this.posX >= 0 && this.posY <= playAreaHeight && this.posY >= 0) {
             explodeSound.play();
-        }
-
-        for (let i = 0; i < 5; i++) {
-            let fireeff = new particle(this.posX, this.posY, randN(-5,4), randN(-5,4), randN(1,5));
-            fireeff.addSprite(engineSprite);
-
-            let fireeff1 = new particle(this.posX, this.posY, randN(-5,4), randN(-5,4), randN(1,5));
-            fireeff1.addSprite(bulletSprite);
+            util_smallExplosion(this.posX, this.posY);
         }
     }
 
@@ -77,9 +98,9 @@ class bullet extends engine_gameObject {
         }
 
         if (!this.gone) {
-            let deathFromStar = this.checkCollision(star);
-            let deathFromP1 = this.checkCollision(spaceShipOne);
-            let deathFromP2 = this.checkCollision(spaceShipTwo);
+            let deathFromStar = util_checkCollision(star, this);
+            let deathFromP1 = util_checkCollision(spaceShipOne, this);
+            let deathFromP2 = util_checkCollision(spaceShipTwo, this);
 
             if ((deathFromStar || deathFromP1 || deathFromP2) && this.timeToLive < 480) {
                 this.gone = true;
@@ -95,10 +116,13 @@ class bullet extends engine_gameObject {
                 }
                 console.log('bullet hit something');
             }
-            if (this.timeToLive % 3 == 0) {
-                let fireeff = new particle(this.posX + 1, this.posY + 1, 0, 0, 10 + randN(1,8));
+            if (!this.trailCooldown) {
+                let fireeff = new particle(this.posX + 1, this.posY + 1, 0, 0, Math.floor(25 * 1/Math.sqrt(this.speedX**2 + this.speedY**2)) + randN(5,8));
                 fireeff.addSprite(engineSprite1);
+                this.trailCooldown = Math.floor(8 * 1/Math.sqrt(this.speedX**2 + this.speedY**2));
             }
+
+            if (this.trailCooldown) this.trailCooldown--;
         }
     }
 }
@@ -153,29 +177,14 @@ class spaceship extends engine_gameObject {
 
         this.cooldown = 0;
         this.fireCooldown = 0;
+        this.trailCooldown = 0;
 
         this.score = 0;
     }
 
-    checkCollision(target) {
-        if (target.posX + target.width/3 >= this.posX &&    // r1 right edge past r2 left
-            target.posX <= this.posX + this.width/3 &&    // r1 left edge past r2 right
-            target.posY + target.height/3 >= this.posY &&    // r1 top edge past r2 bottom
-            target.posY <= this.posY + this.height/3) {    // r1 bottom edge past r2 top
-              return true;
-        }
-        else return false;
-    }
-
     respawn() {
         deathSound.play();
-        for (let i = 0; i < 20; i++) {
-            let fireeff = new particle(this.posX, this.posY, randN(-5,4), randN(-5,4), randN(4,20));
-            fireeff.addSprite(engineSprite);
-
-            let fireeff1 = new particle(this.posX, this.posY, randN(-5,4), randN(-5,4), randN(4,20));
-            fireeff1.addSprite(bulletSprite);
-        }
+        util_bigExplosion(this.posX, this.posY);
         this.speedX = this.speedXstart;
         this.speedY = this.speedYstart;
         this.posX = this.posXstart;
@@ -184,7 +193,7 @@ class spaceship extends engine_gameObject {
 
     shoot() {
         shootSound.play();
-        let bullet1 = new bullet(this.posX + 5, this.posY + 5, this.speedX + -3 * Math.cos((90 + this.sprites[0].rotation)*Math.PI/180), this.speedY + -3 * Math.sin((90 + this.sprites[0].rotation)*Math.PI/180));
+        let bullet1 = new bullet(this.posX + 5, this.posY + 5, this.speedX + -2.5 * Math.cos((90 + this.sprites[0].rotation)*Math.PI/180), this.speedY + -2.5 * Math.sin((90 + this.sprites[0].rotation)*Math.PI/180));
         bullet1.addSprite(bulletSprite);
     }
 
@@ -196,6 +205,11 @@ class spaceship extends engine_gameObject {
         else {
             fireeff.addSprite(bulletSprite)
         }
+    }
+
+    drawTrail() {
+        let fireeff = new particle(this.posX + 7 + 15 * Math.cos((90 + this.sprites[0].rotation)*Math.PI/180), this.posY + 7 + 15 * Math.sin((90 + this.sprites[0].rotation)*Math.PI/180), 0, 0, 500);
+        fireeff.addSprite(trailSprite);
     }
 
     update() {
@@ -225,7 +239,7 @@ class spaceship extends engine_gameObject {
         this.speedX += 1/this.distanceToCenter * 1 * Math.cos(this.angleToCenter);
         this.speedY += 1/this.distanceToCenter * 1 * Math.sin(this.angleToCenter);
 
-        if (this.checkCollision(star)) {
+        if (util_checkCollision(star, this)) {
             this.respawn();
             console.log('a ship has crashed into the star in lego city!');
         }
@@ -234,8 +248,14 @@ class spaceship extends engine_gameObject {
             this.respawn();
         }
 
+       // if (!this.trailCooldown) {
+       //     this.drawTrail();
+       //     this.trailCooldown = Math.floor(25 * 1/Math.sqrt(this.speedX**2 + this.speedY**2));
+       // }
+
         if (this.cooldown) this.cooldown--;
         if (this.fireCooldown) this.fireCooldown--;
+        if (this.trailCooldown) this.trailCooldown--;
     }
 }
 
@@ -255,34 +275,53 @@ class scoreCounter extends engine_UIObject {
     }
 }
 
+class perfmonintor extends engine_UIObject {
+    constructor(gs, posX, posY) {
+        super(gs, posX, posY);
+        this.doUpdate = this.update;
+
+        this.ticks = 0;
+        this.score = 0;
+        this.timer = setInterval( this.updateCounter.bind(this), 1000 );
+    }
+
+    updateCounter() {
+        this.score = this.ticks; 
+        this.ticks = 0;
+    }
+
+    update() {
+        this.ticks++;
+    }
+}
+
 var spaceShipOne = new spaceship(70, 70, gameState, [0, 1, 2, 3], playAreaWidth/2, 200, 1, 0);
 var spaceShipTwo = new spaceship(70, 70, gameState, [4, 5, 6, 7], playAreaWidth/2, playAreaHeight - 200, -1, 0);
-var rocketSprite1 = new engine_gameSprite("rocket.png", 30, 30, 20, 20);
-var rocketSprite2 = new engine_gameSprite("rocket_green.png", 30, 30, 20, 20);
-spaceShipOne.addSprite(rocketSprite1);
-spaceShipTwo.addSprite(rocketSprite2);
-
 var star = new engine_gameObject(500,500, gameState);
-var starSprite = new engine_gameSprite("there-was-an-attempt.png", 300, 300, 135, 165);
-star.addSprite(starSprite);
-star.posX = playAreaWidth/2 - 50;
-star.posY = playAreaHeight/2 - 100;
+var legendaryObj = new engine_gameObject(500,500, gameState); 
 
 var score1 = new scoreCounter(gameState, 50, 50, spaceShipOne, 'Player 1 score: ');
 var score2 = new scoreCounter(gameState, playAreaWidth/2, 50, spaceShipTwo, 'Player 2 score: ');
+var perfmon = new perfmonintor(gameState, 0, 0);
+var fps = new scoreCounter(gameState, 50, playAreaHeight - 50, perfmon, 'TPS: ');
 
-var legendaryObj = new engine_gameObject(500,500, gameState); 
+var idkfaTick = 0;
 
-legendaryObj.posX = playAreaWidth/2 - 50;
-legendaryObj.posY = playAreaHeight/2 - 100;
+function gameInit() {
+    star.addSprite(starSprite);
+    star.posX = playAreaWidth/2 - 50;
+    star.posY = playAreaHeight/2 - 100;
 
-var legendarySprite = new engine_gameSprite("legend.png", 453, 453, 0, 0);
-var ghSprite = new engine_gameSprite("gh.png", 100, 100, 0, 0);
-legendaryObj.addSprite(legendarySprite);
+    gameState.untrackObject(legendaryObj.removePos);
+    legendaryObj.addSprite(legendarySprite);
+    legendaryObj.posX = playAreaWidth/2 - 50;
+    legendaryObj.posY = playAreaHeight/2 - 100;
 
-gameState.untrackObject(legendaryObj.removePos);
+    spaceShipOne.addSprite(rocketSprite1);
+    spaceShipTwo.addSprite(rocketSprite2);
 
-let idkfaTick = 0;
+    gameState.run();
+}
 
 function easterEgg() {
     gameState.regObject(legendaryObj);
@@ -296,4 +335,4 @@ function easterEgg() {
     idkfaTick++;
 }
 
-gameState.run();
+gameInit();

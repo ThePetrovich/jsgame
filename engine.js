@@ -203,6 +203,7 @@ class engine_gameState {
         this.tickInterval = null;
         this.background = new Image(playAreaWidth, playAreaWidth);
         this.background.src = "background.png";
+        //mainContext.rect(0,0,playAreaWidth, playAreaHeight);
     }
 
     regObject(object) {
@@ -226,6 +227,7 @@ class engine_gameState {
     run() {
         let idkfaCorrect = 0;
         mainContext.drawImage(this.background, 0, 0);
+        //mainContext.fill();
         for (let i = 0; i < this.objects.length; i++) {
             if (!this.objects[i].gone) {
                 this.objects[i].render();
